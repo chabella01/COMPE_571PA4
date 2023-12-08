@@ -11,7 +11,7 @@ class ProcessMemory:
 class PhysicalMemory:
     def __init__(self, size):
         self.size = size
-        self.pages = {}  # Dictionary to map virtual page to physical page
+        self.pages = {}  # empty to map virtual page to physical page
         self.queue = []  # For FIFO page replacement
 
     def load_page(self, virtual_page, process_number):
@@ -78,12 +78,12 @@ def process_memory_references(file_path, physical_memory, stats):
 
             print(f"Process {process_number}, Address: {address}, Page: {page_number}, Offset: {offset}, Operation: {operation}")
 
-# Initialize physical memory and statistics
+# initialize physical memory and statistics
 physical_memory = PhysicalMemory(32)
 stats = Statistics()
 
 # Process the memory references
-process_memory_references('data2.txt', physical_memory, stats)
+process_memory_references('data1.txt', physical_memory, stats)
 
 # Print statistics
 print(f"Total Page Faults: {stats.page_faults}")
