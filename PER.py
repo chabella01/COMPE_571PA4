@@ -10,20 +10,21 @@ class ProcessMemory:
         self.page_table = [PageTableEntry() for _ in range(128)]  # 128 entries
 
 class PhysicalMemory:
-    def __init__(self, size):
+    def __init__(self, size, processes):
         self.size = size
         self.pages = {}  # Map virtual page to physical page
         self.queue = []  # For FIFO page replacement
+        self.processes = processes  # Store processes dictionary
 
-    def load_page(self, virtual_page, process_number):
+    def load_page(self, virtual_page, process_number, processes):
         if len(self.pages) >= self.size:
-            self.evict_page()
+            self.evict_page(processes)  # Pass processes dictionary to evict_page
         physical_page = len(self.pages)
         self.pages[(process_number, virtual_page)] = physical_page
         self.queue.append((process_number, virtual_page))
         return physical_page
 
-    def evict_page(self):
+    def evict_page(self, processes):
         evicted_process, evicted_page = self.queue.pop(0)
         evicted_entry = processes[evicted_process].page_table[evicted_page]
         if evicted_entry.dirty:
@@ -42,8 +43,7 @@ def get_virtual_page_number(address):
 def get_offset(address):
     return address & 0x1FF
 
-def process_memory_references(file_path, physical_memory, stats):
-    processes = {}
+def process_memory_references(file_path, physical_memory, stats, processes):
     try:
         with open(file_path, 'r') as file:
             for line in file:
@@ -59,7 +59,7 @@ def process_memory_references(file_path, physical_memory, stats):
                 if page_table_entry.physical_page_number is None:
                     stats.page_faults += 1
                     stats.disk_references += 1
-                    page_table_entry.physical_page_number = physical_memory.load_page(page_number, process_number)
+                    page_table_entry.physical_page_number = physical_memory.load_page(page_number, process_number, processes)
                 if operation == 'W':
                     page_table_entry.dirty = True
                 print(f"Process {process_number}, Address: {address}, Page: {page_number}, Offset: {offset}, Operation: {operation}")
@@ -67,11 +67,12 @@ def process_memory_references(file_path, physical_memory, stats):
         print("Error reading file")
 
 # Initialize physical memory and statistics
-physical_memory = PhysicalMemory(32)
+processes = {}  # Initialize the processes dictionary
+physical_memory = PhysicalMemory(32, processes)
 stats = Statistics()
 
 # Process the memory references
-process_memory_references('data1.txt', physical_memory, stats)
+process_memory_references('data1.txt', physical_memory, stats, processes)
 
 # Print statistics
 print(f"Total Page Faults: {stats.page_faults}")
